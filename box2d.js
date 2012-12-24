@@ -13,18 +13,19 @@
     "0": function(require, module, exports, global) {
         var box2d = {};
         box2d.Vec2 = require("1");
-        box2d.BodyDef = require("2");
-        box2d.Body = require("3");
-        box2d.FixtureDef = require("b");
-        box2d.Fixture = require("7");
-        box2d.World = require("c");
-        box2d.MassData = require("a");
-        box2d.PolygonShape = require("y");
-        box2d.CircleShape = require("z");
-        box2d.DebugDraw = require("10");
+        box2d.BodyDef = require("5");
+        box2d.Body = require("6");
+        box2d.FixtureDef = require("c");
+        box2d.Fixture = require("8");
+        box2d.World = require("e");
+        box2d.MassData = require("b");
+        box2d.PolygonShape = require("10");
+        box2d.CircleShape = require("11");
+        box2d.DebugDraw = require("12");
         module.export = box2d;
     },
     "1": function(require, module, exports, global) {
+        var b2Math = require("2");
         var b2Vec2 = function(x_, y_) {
             if (arguments.length == 2) {
                 this.x = x_;
@@ -145,6 +146,302 @@
     },
     "2": function(require, module, exports, global) {
         var b2Vec2 = require("1");
+        var b2Transform = require("3");
+        var b2Math = function() {
+            this.__varz();
+            this.__constructor.apply(this, arguments);
+        };
+        b2Math.prototype.__constructor = function() {};
+        b2Math.prototype.__varz = function() {};
+        b2Math.IsValid = function(x) {
+            return isFinite(x);
+        };
+        b2Math.Dot = function(a, b) {
+            return a.x * b.x + a.y * b.y;
+        };
+        b2Math.CrossVV = function(a, b) {
+            return a.x * b.y - a.y * b.x;
+        };
+        b2Math.CrossVF = function(a, s) {
+            var v = new b2Vec2(s * a.y, -s * a.x);
+            return v;
+        };
+        b2Math.CrossFV = function(s, a) {
+            var v = new b2Vec2(-s * a.y, s * a.x);
+            return v;
+        };
+        b2Math.MulMV = function(A, v) {
+            var u = new b2Vec2(A.col1.x * v.x + A.col2.x * v.y, A.col1.y * v.x + A.col2.y * v.y);
+            return u;
+        };
+        b2Math.MulTMV = function(A, v) {
+            var u = new b2Vec2(b2Math.Dot(v, A.col1), b2Math.Dot(v, A.col2));
+            return u;
+        };
+        b2Math.MulX = function(T, v) {
+            var a = b2Math.MulMV(T.R, v);
+            a.x += T.position.x;
+            a.y += T.position.y;
+            return a;
+        };
+        b2Math.MulXT = function(T, v) {
+            var a = b2Math.SubtractVV(v, T.position);
+            var tX = a.x * T.R.col1.x + a.y * T.R.col1.y;
+            a.y = a.x * T.R.col2.x + a.y * T.R.col2.y;
+            a.x = tX;
+            return a;
+        };
+        b2Math.AddVV = function(a, b) {
+            var v = new b2Vec2(a.x + b.x, a.y + b.y);
+            return v;
+        };
+        b2Math.SubtractVV = function(a, b) {
+            var v = new b2Vec2(a.x - b.x, a.y - b.y);
+            return v;
+        };
+        b2Math.Distance = function(a, b) {
+            var cX = a.x - b.x;
+            var cY = a.y - b.y;
+            return Math.sqrt(cX * cX + cY * cY);
+        };
+        b2Math.DistanceSquared = function(a, b) {
+            var cX = a.x - b.x;
+            var cY = a.y - b.y;
+            return cX * cX + cY * cY;
+        };
+        b2Math.MulFV = function(s, a) {
+            var v = new b2Vec2(s * a.x, s * a.y);
+            return v;
+        };
+        b2Math.AddMM = function(A, B) {
+            var C = b2Mat22.FromVV(b2Math.AddVV(A.col1, B.col1), b2Math.AddVV(A.col2, B.col2));
+            return C;
+        };
+        b2Math.MulMM = function(A, B) {
+            var C = b2Mat22.FromVV(b2Math.MulMV(A, B.col1), b2Math.MulMV(A, B.col2));
+            return C;
+        };
+        b2Math.MulTMM = function(A, B) {
+            var c1 = new b2Vec2(b2Math.Dot(A.col1, B.col1), b2Math.Dot(A.col2, B.col1));
+            var c2 = new b2Vec2(b2Math.Dot(A.col1, B.col2), b2Math.Dot(A.col2, B.col2));
+            var C = b2Mat22.FromVV(c1, c2);
+            return C;
+        };
+        b2Math.Abs = function(a) {
+            return a > 0 ? a : -a;
+        };
+        b2Math.AbsV = function(a) {
+            var b = new b2Vec2(b2Math.Abs(a.x), b2Math.Abs(a.y));
+            return b;
+        };
+        b2Math.AbsM = function(A) {
+            var B = b2Mat22.FromVV(b2Math.AbsV(A.col1), b2Math.AbsV(A.col2));
+            return B;
+        };
+        b2Math.Min = function(a, b) {
+            return a < b ? a : b;
+        };
+        b2Math.MinV = function(a, b) {
+            var c = new b2Vec2(b2Math.Min(a.x, b.x), b2Math.Min(a.y, b.y));
+            return c;
+        };
+        b2Math.Max = function(a, b) {
+            return a > b ? a : b;
+        };
+        b2Math.MaxV = function(a, b) {
+            var c = new b2Vec2(b2Math.Max(a.x, b.x), b2Math.Max(a.y, b.y));
+            return c;
+        };
+        b2Math.Clamp = function(a, low, high) {
+            return a < low ? low : a > high ? high : a;
+        };
+        b2Math.ClampV = function(a, low, high) {
+            return b2Math.MaxV(low, b2Math.MinV(a, high));
+        };
+        b2Math.Swap = function(a, b) {
+            var tmp = a[0];
+            a[0] = b[0];
+            b[0] = tmp;
+        };
+        b2Math.Random = function() {
+            return Math.random() * 2 - 1;
+        };
+        b2Math.RandomRange = function(lo, hi) {
+            var r = Math.random();
+            r = (hi - lo) * r + lo;
+            return r;
+        };
+        b2Math.NextPowerOfTwo = function(x) {
+            x |= x >> 1 & 2147483647;
+            x |= x >> 2 & 1073741823;
+            x |= x >> 4 & 268435455;
+            x |= x >> 8 & 16777215;
+            x |= x >> 16 & 65535;
+            return x + 1;
+        };
+        b2Math.IsPowerOfTwo = function(x) {
+            var result = x > 0 && (x & x - 1) == 0;
+            return result;
+        };
+        b2Math.b2Vec2_zero = new b2Vec2(0, 0);
+        b2Math.b2Mat22_identity = b2Mat22.FromVV(new b2Vec2(1, 0), new b2Vec2(0, 1));
+        b2Math.b2Transform_identity = new b2Transform(b2Math.b2Vec2_zero, b2Math.b2Mat22_identity);
+        module.exports = b2Math;
+    },
+    "3": function(require, module, exports, global) {
+        var b2Vec2 = require("1");
+        var b2Mat22 = require("4");
+        var b2Transform = function() {
+            this.__varz();
+            this.__constructor.apply(this, arguments);
+        };
+        b2Transform.prototype.__constructor = function(pos, r) {
+            if (pos) {
+                this.position.SetV(pos);
+                this.R.SetM(r);
+            }
+        };
+        b2Transform.prototype.__varz = function() {
+            this.position = new b2Vec2;
+            this.R = new b2Mat22;
+        };
+        b2Transform.prototype.Initialize = function(pos, r) {
+            this.position.SetV(pos);
+            this.R.SetM(r);
+        };
+        b2Transform.prototype.SetIdentity = function() {
+            this.position.SetZero();
+            this.R.SetIdentity();
+        };
+        b2Transform.prototype.Set = function(x) {
+            this.position.SetV(x.position);
+            this.R.SetM(x.R);
+        };
+        b2Transform.prototype.GetAngle = function() {
+            return Math.atan2(this.R.col1.y, this.R.col1.x);
+        };
+        b2Transform.prototype.position = new b2Vec2;
+        b2Transform.prototype.R = new b2Mat22;
+        b2Transform.prototype.initialize = b2Transform.prototype.Initialize;
+        b2Transform.prototype.setIdentity = b2Transform.prototype.SetIdentity;
+        b2Transform.prototype.set = b2Transform.prototype.Set;
+        b2Transform.prototype.getAngle = b2Transform.prototype.GetAngle;
+        module.exports = b2Transform;
+    },
+    "4": function(require, module, exports, global) {
+        var b2Vec2 = require("1");
+        var b2Mat22 = function() {
+            this.__varz();
+            this.__constructor.apply(this, arguments);
+        };
+        b2Mat22.prototype.__constructor = function() {
+            this.col1.x = this.col2.y = 1;
+        };
+        b2Mat22.prototype.__varz = function() {
+            this.col1 = new b2Vec2;
+            this.col2 = new b2Vec2;
+        };
+        b2Mat22.FromAngle = function(angle) {
+            var mat = new b2Mat22;
+            mat.Set(angle);
+            return mat;
+        };
+        b2Mat22.FromVV = function(c1, c2) {
+            var mat = new b2Mat22;
+            mat.SetVV(c1, c2);
+            return mat;
+        };
+        b2Mat22.prototype.Set = function(angle) {
+            var c = Math.cos(angle);
+            var s = Math.sin(angle);
+            this.col1.x = c;
+            this.col2.x = -s;
+            this.col1.y = s;
+            this.col2.y = c;
+        };
+        b2Mat22.prototype.SetVV = function(c1, c2) {
+            this.col1.SetV(c1);
+            this.col2.SetV(c2);
+        };
+        b2Mat22.prototype.Copy = function() {
+            var mat = new b2Mat22;
+            mat.SetM(this);
+            return mat;
+        };
+        b2Mat22.prototype.SetM = function(m) {
+            this.col1.SetV(m.col1);
+            this.col2.SetV(m.col2);
+        };
+        b2Mat22.prototype.AddM = function(m) {
+            this.col1.x += m.col1.x;
+            this.col1.y += m.col1.y;
+            this.col2.x += m.col2.x;
+            this.col2.y += m.col2.y;
+        };
+        b2Mat22.prototype.SetIdentity = function() {
+            this.col1.x = 1;
+            this.col2.x = 0;
+            this.col1.y = 0;
+            this.col2.y = 1;
+        };
+        b2Mat22.prototype.SetZero = function() {
+            this.col1.x = 0;
+            this.col2.x = 0;
+            this.col1.y = 0;
+            this.col2.y = 0;
+        };
+        b2Mat22.prototype.GetAngle = function() {
+            return Math.atan2(this.col1.y, this.col1.x);
+        };
+        b2Mat22.prototype.GetInverse = function(out) {
+            var a = this.col1.x;
+            var b = this.col2.x;
+            var c = this.col1.y;
+            var d = this.col2.y;
+            var det = a * d - b * c;
+            if (det != 0) {
+                det = 1 / det;
+            }
+            out.col1.x = det * d;
+            out.col2.x = -det * b;
+            out.col1.y = -det * c;
+            out.col2.y = det * a;
+            return out;
+        };
+        b2Mat22.prototype.Solve = function(out, bX, bY) {
+            var a11 = this.col1.x;
+            var a12 = this.col2.x;
+            var a21 = this.col1.y;
+            var a22 = this.col2.y;
+            var det = a11 * a22 - a12 * a21;
+            if (det != 0) {
+                det = 1 / det;
+            }
+            out.x = det * (a22 * bX - a12 * bY);
+            out.y = det * (a11 * bY - a21 * bX);
+            return out;
+        };
+        b2Mat22.prototype.Abs = function() {
+            this.col1.Abs();
+            this.col2.Abs();
+        };
+        b2Mat22.prototype.col1 = new b2Vec2;
+        b2Mat22.prototype.col2 = new b2Vec2;
+        b2Mat22.prototype.set = b2Mat22.prototype.Set;
+        b2Mat22.prototype.setVV = b2Mat22.prototype.SetVV;
+        b2Mat22.prototype.copy = b2Mat22.prototype.Copy;
+        b2Mat22.prototype.setM = b2Mat22.prototype.SetM;
+        b2Mat22.prototype.addM = b2Mat22.prototype.AddM;
+        b2Mat22.prototype.setIdentity = b2Mat22.prototype.SetIdentity;
+        b2Mat22.prototype.setZero = b2Mat22.prototype.SetZero;
+        b2Mat22.prototype.getAngle = b2Mat22.prototype.GetAngle;
+        b2Mat22.prototype.getInverse = b2Mat22.prototype.GetInverse;
+        b2Mat22.prototype.solve = b2Mat22.prototype.Solve;
+        b2Mat22.prototype.abs = b2Mat22.prototype.Abs;
+        module.exports = b2Mat22;
+    },
+    "5": function(require, module, exports, global) {
+        var b2Vec2 = require("1");
         var b2BodyDef = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -185,13 +482,15 @@
         b2BodyDef.prototype.inertiaScale = null;
         module.exports = b2BodyDef;
     },
-    "3": function(require, module, exports, global) {
-        var b2Transform = require("4");
-        var b2Sweep = require("6");
+    "6": function(require, module, exports, global) {
+        var b2Transform = require("3");
+        var b2Sweep = require("7");
         var b2Vec2 = require("1");
-        var b2Fixture = require("7");
-        var b2FixtureDef = require("b");
-        var b2BodyDef = require("2");
+        var b2Fixture = require("8");
+        var b2FixtureDef = require("c");
+        var b2BodyDef = require("5");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2Body = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -889,159 +1188,7 @@
         b2Body.prototype.getWorld = b2Body.prototype.GetWorld;
         module.exports = b2Body;
     },
-    "4": function(require, module, exports, global) {
-        var b2Vec2 = require("1");
-        var b2Mat22 = require("5");
-        var b2Transform = function() {
-            this.__varz();
-            this.__constructor.apply(this, arguments);
-        };
-        b2Transform.prototype.__constructor = function(pos, r) {
-            if (pos) {
-                this.position.SetV(pos);
-                this.R.SetM(r);
-            }
-        };
-        b2Transform.prototype.__varz = function() {
-            this.position = new b2Vec2;
-            this.R = new b2Mat22;
-        };
-        b2Transform.prototype.Initialize = function(pos, r) {
-            this.position.SetV(pos);
-            this.R.SetM(r);
-        };
-        b2Transform.prototype.SetIdentity = function() {
-            this.position.SetZero();
-            this.R.SetIdentity();
-        };
-        b2Transform.prototype.Set = function(x) {
-            this.position.SetV(x.position);
-            this.R.SetM(x.R);
-        };
-        b2Transform.prototype.GetAngle = function() {
-            return Math.atan2(this.R.col1.y, this.R.col1.x);
-        };
-        b2Transform.prototype.position = new b2Vec2;
-        b2Transform.prototype.R = new b2Mat22;
-        b2Transform.prototype.initialize = b2Transform.prototype.Initialize;
-        b2Transform.prototype.setIdentity = b2Transform.prototype.SetIdentity;
-        b2Transform.prototype.set = b2Transform.prototype.Set;
-        b2Transform.prototype.getAngle = b2Transform.prototype.GetAngle;
-        module.exports = b2Transform;
-    },
-    "5": function(require, module, exports, global) {
-        var b2Vec2 = require("1");
-        var b2Mat22 = function() {
-            this.__varz();
-            this.__constructor.apply(this, arguments);
-        };
-        b2Mat22.prototype.__constructor = function() {
-            this.col1.x = this.col2.y = 1;
-        };
-        b2Mat22.prototype.__varz = function() {
-            this.col1 = new b2Vec2;
-            this.col2 = new b2Vec2;
-        };
-        b2Mat22.FromAngle = function(angle) {
-            var mat = new b2Mat22;
-            mat.Set(angle);
-            return mat;
-        };
-        b2Mat22.FromVV = function(c1, c2) {
-            var mat = new b2Mat22;
-            mat.SetVV(c1, c2);
-            return mat;
-        };
-        b2Mat22.prototype.Set = function(angle) {
-            var c = Math.cos(angle);
-            var s = Math.sin(angle);
-            this.col1.x = c;
-            this.col2.x = -s;
-            this.col1.y = s;
-            this.col2.y = c;
-        };
-        b2Mat22.prototype.SetVV = function(c1, c2) {
-            this.col1.SetV(c1);
-            this.col2.SetV(c2);
-        };
-        b2Mat22.prototype.Copy = function() {
-            var mat = new b2Mat22;
-            mat.SetM(this);
-            return mat;
-        };
-        b2Mat22.prototype.SetM = function(m) {
-            this.col1.SetV(m.col1);
-            this.col2.SetV(m.col2);
-        };
-        b2Mat22.prototype.AddM = function(m) {
-            this.col1.x += m.col1.x;
-            this.col1.y += m.col1.y;
-            this.col2.x += m.col2.x;
-            this.col2.y += m.col2.y;
-        };
-        b2Mat22.prototype.SetIdentity = function() {
-            this.col1.x = 1;
-            this.col2.x = 0;
-            this.col1.y = 0;
-            this.col2.y = 1;
-        };
-        b2Mat22.prototype.SetZero = function() {
-            this.col1.x = 0;
-            this.col2.x = 0;
-            this.col1.y = 0;
-            this.col2.y = 0;
-        };
-        b2Mat22.prototype.GetAngle = function() {
-            return Math.atan2(this.col1.y, this.col1.x);
-        };
-        b2Mat22.prototype.GetInverse = function(out) {
-            var a = this.col1.x;
-            var b = this.col2.x;
-            var c = this.col1.y;
-            var d = this.col2.y;
-            var det = a * d - b * c;
-            if (det != 0) {
-                det = 1 / det;
-            }
-            out.col1.x = det * d;
-            out.col2.x = -det * b;
-            out.col1.y = -det * c;
-            out.col2.y = det * a;
-            return out;
-        };
-        b2Mat22.prototype.Solve = function(out, bX, bY) {
-            var a11 = this.col1.x;
-            var a12 = this.col2.x;
-            var a21 = this.col1.y;
-            var a22 = this.col2.y;
-            var det = a11 * a22 - a12 * a21;
-            if (det != 0) {
-                det = 1 / det;
-            }
-            out.x = det * (a22 * bX - a12 * bY);
-            out.y = det * (a11 * bY - a21 * bX);
-            return out;
-        };
-        b2Mat22.prototype.Abs = function() {
-            this.col1.Abs();
-            this.col2.Abs();
-        };
-        b2Mat22.prototype.col1 = new b2Vec2;
-        b2Mat22.prototype.col2 = new b2Vec2;
-        b2Mat22.prototype.set = b2Mat22.prototype.Set;
-        b2Mat22.prototype.setVV = b2Mat22.prototype.SetVV;
-        b2Mat22.prototype.copy = b2Mat22.prototype.Copy;
-        b2Mat22.prototype.setM = b2Mat22.prototype.SetM;
-        b2Mat22.prototype.addM = b2Mat22.prototype.AddM;
-        b2Mat22.prototype.setIdentity = b2Mat22.prototype.SetIdentity;
-        b2Mat22.prototype.setZero = b2Mat22.prototype.SetZero;
-        b2Mat22.prototype.getAngle = b2Mat22.prototype.GetAngle;
-        b2Mat22.prototype.getInverse = b2Mat22.prototype.GetInverse;
-        b2Mat22.prototype.solve = b2Mat22.prototype.Solve;
-        b2Mat22.prototype.abs = b2Mat22.prototype.Abs;
-        module.exports = b2Mat22;
-    },
-    "6": function(require, module, exports, global) {
+    "7": function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2Sweep = function() {
             this.__varz();
@@ -1101,10 +1248,11 @@
         b2Sweep.prototype.advance = b2Sweep.prototype.Advance;
         module.exports = b2Sweep;
     },
-    "7": function(require, module, exports, global) {
-        var b2AABB = require("8");
-        var b2FilterData = require("9");
-        var b2MassData = require("a");
+    "8": function(require, module, exports, global) {
+        var b2AABB = require("9");
+        var b2FilterData = require("a");
+        var b2MassData = require("b");
+        var b2Math = require("2");
         var b2Fixture = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -1279,7 +1427,7 @@
         b2Fixture.prototype.getAABB = b2Fixture.prototype.GetAABB;
         module.exports = b2Fixture;
     },
-    "8": function(require, module, exports, global) {
+    "9": function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2AABB = function() {
             this.__varz();
@@ -1402,7 +1550,7 @@
         b2AABB.prototype.combine = b2AABB.prototype.Combine;
         module.exports = b2AABB;
     },
-    "9": function(require, module, exports, global) {
+    a: function(require, module, exports, global) {
         var b2FilterData = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -1425,7 +1573,7 @@
         b2FilterData.prototype.copy = b2FilterData.prototype.Copy;
         module.exports = b2FilterData;
     },
-    a: function(require, module, exports, global) {
+    b: function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2MassData = function() {
             this.__varz();
@@ -1440,8 +1588,8 @@
         b2MassData.prototype.I = 0;
         module.exports = b2MassData;
     },
-    b: function(require, module, exports, global) {
-        var b2FilterData = require("9");
+    c: function(require, module, exports, global) {
+        var b2FilterData = require("a");
         var b2FixtureDef = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -1469,20 +1617,65 @@
         b2FixtureDef.prototype.filter = new b2FilterData;
         module.exports = b2FixtureDef;
     },
-    c: function(require, module, exports, global) {
-        var b2BodyDef = require("2");
-        var b2ContactManager = require("d");
-        var b2ContactSolver = require("o");
-        var b2Island = require("u");
-        var b2TimeStep = require("p");
-        var b2Sweep = require("6");
-        var b2Transform = require("4");
-        var b2Color = require("w");
-        var b2Body = require("3");
+    d: function(require, module, exports, global) {
+        var b2Settings = function() {
+            this.__varz();
+            this.__constructor.apply(this, arguments);
+        };
+        b2Settings.prototype.__constructor = function() {};
+        b2Settings.prototype.__varz = function() {};
+        b2Settings.b2MixFriction = function(friction1, friction2) {
+            return Math.sqrt(friction1 * friction2);
+        };
+        b2Settings.b2MixRestitution = function(restitution1, restitution2) {
+            return restitution1 > restitution2 ? restitution1 : restitution2;
+        };
+        b2Settings.b2Assert = function(a) {
+            if (!a) {
+                throw "Assertion Failed";
+            }
+        };
+        b2Settings.VERSION = "2.1alpha";
+        b2Settings.USHRT_MAX = 65535;
+        b2Settings.b2_pi = Math.PI;
+        b2Settings.b2_maxManifoldPoints = 2;
+        b2Settings.b2_aabbExtension = .1;
+        b2Settings.b2_aabbMultiplier = 2;
+        b2Settings.b2_polygonRadius = 2 * b2Settings.b2_linearSlop;
+        b2Settings.b2_linearSlop = .005;
+        b2Settings.b2_angularSlop = 2 / 180 * b2Settings.b2_pi;
+        b2Settings.b2_toiSlop = 8 * b2Settings.b2_linearSlop;
+        b2Settings.b2_maxTOIContactsPerIsland = 32;
+        b2Settings.b2_maxTOIJointsPerIsland = 32;
+        b2Settings.b2_velocityThreshold = 1;
+        b2Settings.b2_maxLinearCorrection = .2;
+        b2Settings.b2_maxAngularCorrection = 8 / 180 * b2Settings.b2_pi;
+        b2Settings.b2_maxTranslation = 2;
+        b2Settings.b2_maxTranslationSquared = b2Settings.b2_maxTranslation * b2Settings.b2_maxTranslation;
+        b2Settings.b2_maxRotation = .5 * b2Settings.b2_pi;
+        b2Settings.b2_maxRotationSquared = b2Settings.b2_maxRotation * b2Settings.b2_maxRotation;
+        b2Settings.b2_contactBaumgarte = .2;
+        b2Settings.b2_timeToSleep = .5;
+        b2Settings.b2_linearSleepTolerance = .01;
+        b2Settings.b2_angularSleepTolerance = 2 / 180 * b2Settings.b2_pi;
+        module.exports = b2Settings;
+    },
+    e: function(require, module, exports, global) {
+        var b2BodyDef = require("5");
+        var b2ContactManager = require("f");
+        var b2ContactSolver = require("q");
+        var b2Island = require("w");
+        var b2TimeStep = require("r");
+        var b2Sweep = require("7");
+        var b2Transform = require("3");
+        var b2Color = require("y");
+        var b2Body = require("6");
         var b2Vec2 = require("1");
-        var b2AABB = require("8");
-        var b2RayCastOutput = require("x");
-        var b2RayCastInput = require("j");
+        var b2AABB = require("9");
+        var b2RayCastOutput = require("z");
+        var b2RayCastInput = require("l");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2World = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -2363,10 +2556,10 @@
         b2World.prototype.isLocked = b2World.prototype.IsLocked;
         module.exports = b2World;
     },
-    d: function(require, module, exports, global) {
-        var b2ContactFactory = require("e");
-        var b2DynamicTreeBroadPhase = require("g");
-        var b2ContactPoint = require("l");
+    f: function(require, module, exports, global) {
+        var b2ContactFactory = require("g");
+        var b2DynamicTreeBroadPhase = require("i");
+        var b2ContactPoint = require("n");
         var b2ContactManager = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -2530,8 +2723,8 @@
         b2ContactManager.prototype.collide = b2ContactManager.prototype.Collide;
         module.exports = b2ContactManager;
     },
-    e: function(require, module, exports, global) {
-        var b2ContactRegister = require("f");
+    g: function(require, module, exports, global) {
+        var b2ContactRegister = require("h");
         var b2ContactFactory = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -2616,7 +2809,7 @@
         b2ContactFactory.prototype.destroy = b2ContactFactory.prototype.Destroy;
         module.exports = b2ContactFactory;
     },
-    f: function(require, module, exports, global) {
+    h: function(require, module, exports, global) {
         var b2ContactRegister = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -2630,9 +2823,9 @@
         b2ContactRegister.prototype.poolCount = 0;
         module.exports = b2ContactRegister;
     },
-    g: function(require, module, exports, global) {
-        var b2DynamicTree = require("h");
-        var b2DynamicTreePair = require("k");
+    i: function(require, module, exports, global) {
+        var b2DynamicTree = require("j");
+        var b2DynamicTreePair = require("m");
         var b2DynamicTreeBroadPhase = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -2750,10 +2943,12 @@
         b2DynamicTreeBroadPhase.prototype.rebalance = b2DynamicTreeBroadPhase.prototype.Rebalance;
         module.exports = b2DynamicTreeBroadPhase;
     },
-    h: function(require, module, exports, global) {
-        var b2DynamicTreeNode = require("i");
-        var b2AABB = require("8");
-        var b2RayCastInput = require("j");
+    j: function(require, module, exports, global) {
+        var b2DynamicTreeNode = require("k");
+        var b2AABB = require("9");
+        var b2RayCastInput = require("l");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2DynamicTree = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3004,8 +3199,8 @@
         b2DynamicTree.prototype.rayCast = b2DynamicTree.prototype.RayCast;
         module.exports = b2DynamicTree;
     },
-    i: function(require, module, exports, global) {
-        var b2AABB = require("8");
+    k: function(require, module, exports, global) {
+        var b2AABB = require("9");
         var b2DynamicTreeNode = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3025,7 +3220,7 @@
         b2DynamicTreeNode.prototype.isLeaf = b2DynamicTreeNode.prototype.IsLeaf;
         module.exports = b2DynamicTreeNode;
     },
-    j: function(require, module, exports, global) {
+    l: function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2RayCastInput = function() {
             this.__varz();
@@ -3045,7 +3240,7 @@
         b2RayCastInput.prototype.maxFraction = null;
         module.exports = b2RayCastInput;
     },
-    k: function(require, module, exports, global) {
+    m: function(require, module, exports, global) {
         var b2DynamicTreePair = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3056,9 +3251,9 @@
         b2DynamicTreePair.prototype.proxyB = null;
         module.exports = b2DynamicTreePair;
     },
-    l: function(require, module, exports, global) {
+    n: function(require, module, exports, global) {
         var b2Vec2 = require("1");
-        var b2ContactID = require("m");
+        var b2ContactID = require("o");
         var b2ContactPoint = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3081,8 +3276,8 @@
         b2ContactPoint.prototype.id = new b2ContactID;
         module.exports = b2ContactPoint;
     },
-    m: function(require, module, exports, global) {
-        var Features = require("n");
+    o: function(require, module, exports, global) {
+        var Features = require("p");
         var b2ContactID = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3117,7 +3312,7 @@
         b2ContactID.prototype.copy = b2ContactID.prototype.Copy;
         module.exports = b2ContactID;
     },
-    n: function(require, module, exports, global) {
+    p: function(require, module, exports, global) {
         var Features = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3159,11 +3354,13 @@
         Features.prototype._m_id = null;
         module.exports = Features;
     },
-    o: function(require, module, exports, global) {
-        var b2TimeStep = require("p");
-        var b2WorldManifold = require("q");
-        var b2PositionSolverManifold = require("r");
-        var b2ContactConstraint = require("s");
+    q: function(require, module, exports, global) {
+        var b2TimeStep = require("r");
+        var b2WorldManifold = require("s");
+        var b2PositionSolverManifold = require("t");
+        var b2ContactConstraint = require("u");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2ContactSolver = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3576,7 +3773,7 @@
         b2ContactSolver.prototype.solvePositionConstraints = b2ContactSolver.prototype.SolvePositionConstraints;
         module.exports = b2ContactSolver;
     },
-    p: function(require, module, exports, global) {
+    r: function(require, module, exports, global) {
         var b2TimeStep = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3599,8 +3796,9 @@
         b2TimeStep.prototype.set = b2TimeStep.prototype.Set;
         module.exports = b2TimeStep;
     },
-    q: function(require, module, exports, global) {
+    s: function(require, module, exports, global) {
         var b2Vec2 = require("1");
+        var b2Settings = require("d");
         var b2WorldManifold = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3708,8 +3906,9 @@
         b2WorldManifold.prototype.initialize = b2WorldManifold.prototype.Initialize;
         module.exports = b2WorldManifold;
     },
-    r: function(require, module, exports, global) {
+    t: function(require, module, exports, global) {
         var b2Vec2 = require("1");
+        var b2Settings = require("d");
         var b2PositionSolverManifold = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3812,10 +4011,11 @@
         b2PositionSolverManifold.prototype.initialize = b2PositionSolverManifold.prototype.Initialize;
         module.exports = b2PositionSolverManifold;
     },
-    s: function(require, module, exports, global) {
-        var b2ContactConstraintPoint = require("t");
+    u: function(require, module, exports, global) {
+        var b2ContactConstraintPoint = require("v");
         var b2Vec2 = require("1");
-        var b2Mat22 = require("5");
+        var b2Mat22 = require("4");
+        var b2Settings = require("d");
         var b2ContactConstraint = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -3849,7 +4049,7 @@
         b2ContactConstraint.prototype.manifold = null;
         module.exports = b2ContactConstraint;
     },
-    t: function(require, module, exports, global) {
+    v: function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2ContactConstraintPoint = function() {
             this.__varz();
@@ -3872,8 +4072,10 @@
         b2ContactConstraintPoint.prototype.velocityBias = null;
         module.exports = b2ContactConstraintPoint;
     },
-    u: function(require, module, exports, global) {
-        var b2ContactImpulse = require("v");
+    w: function(require, module, exports, global) {
+        var b2ContactImpulse = require("x");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2Island = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -4104,7 +4306,8 @@
         b2Island.prototype.addJoint = b2Island.prototype.AddJoint;
         module.exports = b2Island;
     },
-    v: function(require, module, exports, global) {
+    x: function(require, module, exports, global) {
+        var b2Settings = require("d");
         var b2ContactImpulse = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -4118,7 +4321,8 @@
         b2ContactImpulse.prototype.tangentImpulses = new Array(b2Settings.b2_maxManifoldPoints);
         module.exports = b2ContactImpulse;
     },
-    w: function(require, module, exports, global) {
+    y: function(require, module, exports, global) {
+        var b2Math = require("2");
         var b2Color = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
@@ -4161,7 +4365,7 @@
         b2Color.prototype.set = b2Color.prototype.Set;
         module.exports = b2Color;
     },
-    x: function(require, module, exports, global) {
+    z: function(require, module, exports, global) {
         var b2Vec2 = require("1");
         var b2RayCastOutput = function() {
             this.__varz();
@@ -4175,11 +4379,13 @@
         b2RayCastOutput.prototype.fraction = null;
         module.exports = b2RayCastOutput;
     },
-    y: function(require, module, exports, global) {
+    "10": function(require, module, exports, global) {
         var b2Vec2 = require("1");
-        var b2Mat22 = require("5");
-        var b2Transform = require("4");
-        var b2MassData = require("a");
+        var b2Mat22 = require("4");
+        var b2Transform = require("3");
+        var b2MassData = require("b");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2PolygonShape = function() {
             b2Shape.prototype.__varz.call(this);
             this.__varz();
@@ -4654,8 +4860,10 @@
         b2PolygonShape.prototype.getSupportVertex = b2PolygonShape.prototype.GetSupportVertex;
         module.exports = b2PolygonShape;
     },
-    z: function(require, module, exports, global) {
+    "11": function(require, module, exports, global) {
         var b2Vec2 = require("1");
+        var b2Settings = require("d");
+        var b2Math = require("2");
         var b2CircleShape = function() {
             b2Shape.prototype.__varz.call(this);
             this.__varz();
@@ -4773,9 +4981,9 @@
         b2CircleShape.prototype.setRadius = b2CircleShape.prototype.SetRadius;
         module.exports = b2CircleShape;
     },
-    "10": function(require, module, exports, global) {
+    "12": function(require, module, exports, global) {
         var b2Vec2 = require("1");
-        var b2Color = require("w");
+        var b2Color = require("y");
         var b2DebugDraw = function() {
             this.__varz();
             this.__constructor.apply(this, arguments);
