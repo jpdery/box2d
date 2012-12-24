@@ -1,0 +1,9 @@
+{
+    "name": "box2d",
+    "version": "2.1.0a",
+    "main": "lib/main.js",
+    "author": "Jean-Philippe Dery <jeanphilippe.dery@gmail.com>",
+    "engines": {
+        "node": "*"
+    }
+}
