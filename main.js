@@ -12,4 +12,4 @@ box2d.PolygonShape = require('./collision/shapes/polygon-shape');
 box2d.CircleShape  = require('./collision/shapes/circle-shape');
 box2d.DebugDraw    = require('./dynamics/debug-draw');
 
-module.export = box2d;
+module.exports = box2d;

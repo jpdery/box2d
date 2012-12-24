@@ -22,7 +22,7 @@
         box2d.PolygonShape = require("10");
         box2d.CircleShape = require("11");
         box2d.DebugDraw = require("12");
-        module.export = box2d;
+        module.exports = box2d;
     },
     "1": function(require, module, exports, global) {
         var b2Math = require("2");
